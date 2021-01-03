@@ -10,7 +10,7 @@ import java.sql.SQLException;
 import java.util.*;
 
 public abstract class Model {
-    private final ModelService modelService;
+    protected final ModelService modelService;
     private boolean isNew;
 
     protected Map<String, ModelProperty> properties;
