@@ -11,9 +11,10 @@ public class Stat extends Model {
         super(connection, resultSet);
     }
 
-    public Stat(DatabaseConnection connection) {
+    public Stat(DatabaseConnection connection, String uuid) {
         super(connection);
 
+        createProperty("uuid", uuid);
         createProperty("kills", 0);
         createProperty("coins", 0);
     }
