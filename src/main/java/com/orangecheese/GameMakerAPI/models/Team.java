@@ -6,12 +6,12 @@ import com.orangecheese.GameMakerAPI.orm.modelfacade.ModelService;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class TeamData extends Model {
-    public TeamData(ModelService modelService, ResultSet resultSet) throws SQLException {
+public class Team extends Model {
+    public Team(ModelService modelService, ResultSet resultSet) throws SQLException {
         super(modelService, resultSet);
     }
 
-    public TeamData(ModelService modelService, String teamName) {
+    public Team(ModelService modelService, String teamName) {
         super(modelService);
 
         createProperty("name", teamName);

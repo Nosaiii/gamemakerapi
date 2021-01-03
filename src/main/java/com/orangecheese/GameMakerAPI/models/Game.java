@@ -9,12 +9,12 @@ import com.orangecheese.GameMakerAPI.orm.modelfacade.ModelService;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class GameData extends Model {
-    public GameData(ModelService modelService, ResultSet resultSet) throws SQLException {
+public class Game extends Model {
+    public Game(ModelService modelService, ResultSet resultSet) throws SQLException {
         super(modelService, resultSet);
     }
 
-    public GameData(ModelService modelService, boolean serverInstance) {
+    public Game(ModelService modelService, boolean serverInstance) {
         super(modelService);
 
         createProperty("name", "Game");
@@ -35,9 +35,9 @@ public class GameData extends Model {
         createProperty("lobby_z", 0);
     }
 
-    public Query<SpawnPointData> getSpawnPoints() {
+    public Query<SpawnPoint> getSpawnPoints() {
         try {
-            return modelService.get(SpawnPointData.class)
+            return modelService.get(SpawnPoint.class)
                     .where(sp -> sp.getProperty("game_id").<Long>get().equals(getProperty("id").<Long>get()));
         } catch (UndefinedModelException e) {
             e.printStackTrace();

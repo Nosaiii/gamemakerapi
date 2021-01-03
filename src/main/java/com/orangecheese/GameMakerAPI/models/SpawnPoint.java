@@ -6,14 +6,17 @@ import com.orangecheese.GameMakerAPI.orm.modelfacade.ModelService;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class SpawnPointData extends Model {
-    public SpawnPointData(ModelService modelService, ResultSet resultSet) throws SQLException {
+public class SpawnPoint extends Model {
+    public SpawnPoint(ModelService modelService, ResultSet resultSet) throws SQLException {
         super(modelService, resultSet);
     }
 
-    public SpawnPointData(ModelService modelService, String worldName, double x, double y, double z, float yaw, float pitch) {
+    public SpawnPoint(ModelService modelService, Team team, String worldName, double x, double y, double z, float yaw, float pitch) {
         super(modelService);
 
+        Object teamId = team == null ? null : team.getProperty("id").<Long>get();
+
+        createProperty("team_id", teamId);
         createProperty("world", worldName);
         createProperty("x", x);
         createProperty("y", y);
