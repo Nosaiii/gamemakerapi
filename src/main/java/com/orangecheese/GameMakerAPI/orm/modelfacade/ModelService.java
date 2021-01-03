@@ -32,7 +32,7 @@ public class ModelService {
 
     public void register(ModelRegistrationProperties properties) throws DuplicateModelRegistration {
         if(modelMappers.containsKey(properties.getModelClass()) || singletonFactories.containsKey(properties.getModelClass())) {
-            throw new DuplicateModelRegistration();
+            throw new DuplicateModelRegistration(properties.getModelClass());
         }
 
         modelMappers.put(properties.getModelClass(), properties.getModelMapper());
@@ -62,12 +62,12 @@ public class ModelService {
             }
 
             @Override
-            public T create() {
+            public T create() throws MissingModelConstructor {
                 try {
                     Constructor<T> constructor = (Constructor<T>) properties.getModelClass().getConstructor(DatabaseConnection.class);
                     return constructor.newInstance(connection);
                 } catch(NoSuchMethodException e) {
-                    new MissingModelConstructor(properties.getModelClass()).printStackTrace();
+                    throw new MissingModelConstructor(properties.getModelClass());
                 } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
                     e.printStackTrace();
                 }
@@ -90,6 +90,12 @@ public class ModelService {
             throw new UndefinedModelException(modelClass);
         }
 
-        return (TResult) singletonFactories.get(modelClass).create();
+        try {
+            return (TResult) singletonFactories.get(modelClass).create();
+        } catch (MissingModelConstructor missingModelConstructor) {
+            missingModelConstructor.printStackTrace();
+        }
+
+        return null;
     }
 }
