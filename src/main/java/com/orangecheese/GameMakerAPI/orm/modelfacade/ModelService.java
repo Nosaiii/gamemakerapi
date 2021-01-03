@@ -3,15 +3,11 @@ package com.orangecheese.GameMakerAPI.orm.modelfacade;
 import com.orangecheese.GameMakerAPI.orm.Query;
 import com.orangecheese.GameMakerAPI.orm.connection.DatabaseConnection;
 import com.orangecheese.GameMakerAPI.orm.connection.DatabaseConnectionProperties;
-import com.orangecheese.GameMakerAPI.orm.exceptions.DuplicateModelRegistration;
 import com.orangecheese.GameMakerAPI.orm.exceptions.EmptyQueryResultException;
-import com.orangecheese.GameMakerAPI.orm.exceptions.MissingModelConstructor;
 import com.orangecheese.GameMakerAPI.orm.exceptions.UndefinedModelException;
 import com.orangecheese.GameMakerAPI.orm.model.IModelMapper;
 import com.orangecheese.GameMakerAPI.orm.model.Model;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,26 +16,29 @@ import java.util.Objects;
 public class ModelService {
     private final DatabaseConnection connection;
 
-    private final Map<Class<? extends Model>, IModelMapper> modelMappers;
-    private final Map<Class<? extends Model>, IModelFactory<? extends Model>> singletonFactories;
+    private final Map<Class<? extends Model>, ModelRegistration> registrations;
 
     public ModelService(DatabaseConnectionProperties properties) {
         connection = new DatabaseConnection(properties);
-
-        modelMappers = new HashMap<>();
-        singletonFactories = new HashMap<>();
+        registrations = new HashMap<>();
     }
 
-    public void register(ModelRegistrationProperties properties) throws DuplicateModelRegistration {
-        if(modelMappers.containsKey(properties.getModelClass()) || singletonFactories.containsKey(properties.getModelClass())) {
-            throw new DuplicateModelRegistration(properties.getModelClass());
+    public void register(ModelRegistrationProperties properties) {
+        if(registrations.containsKey(properties.getModelClass())) {
+            return;
         }
 
-        modelMappers.put(properties.getModelClass(), properties.getModelMapper());
-        singletonFactories.put(properties.getModelClass(), registerFacade(properties));
+        IModelMapper mapper = properties.getModelMapper();
+        IModelFactory<? extends Model> factory = registerFacade(properties);
+        String tableName = properties.getTableName();
+        ModelRegistration registration = new ModelRegistration(mapper, factory, tableName);
+
+        registrations.put(properties.getModelClass(), registration);
     }
 
     private <T extends Model> IModelFactory<T> registerFacade(ModelRegistrationProperties properties) {
+        final ModelService modelService = this;
+
         return new IModelFactory<T>() {
             @Override
             public String buildQuery() {
@@ -57,46 +56,25 @@ public class ModelService {
                 }
                 Objects.requireNonNull(result);
 
-                IModelMapper mapper = modelMappers.get(properties.getModelClass());
-                String tableName = properties.getTableName();
-                return new Query<T>(mapper, connection, tableName, result);
-            }
-
-            @Override
-            public T create() throws MissingModelConstructor {
-                try {
-                    Constructor<T> constructor = (Constructor<T>) properties.getModelClass().getConstructor(DatabaseConnection.class);
-                    return constructor.newInstance(connection);
-                } catch(NoSuchMethodException e) {
-                    throw new MissingModelConstructor(properties.getModelClass());
-                } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
-                    e.printStackTrace();
-                }
-
-                return null;
+                IModelMapper mapper = registrations.get(properties.getModelClass()).getMapper();
+                return new Query<T>(mapper, modelService, result);
             }
         };
     }
 
-    public <TResult extends Model> Query<TResult> get(Class<TResult> modelClass) throws UndefinedModelException {
-        if(!singletonFactories.containsKey(modelClass)) {
-            throw new UndefinedModelException(modelClass);
-        }
-
-        return (Query<TResult>) singletonFactories.get(modelClass).all();
+    public DatabaseConnection getConnection() {
+        return connection;
     }
 
-    public <TResult extends Model> TResult create(Class<TResult> modelClass) throws UndefinedModelException {
-        if(!singletonFactories.containsKey(modelClass)) {
+    public ModelRegistration getRegistration(Class<? extends Model> modelClass) throws UndefinedModelException {
+        if(!registrations.containsKey(modelClass)) {
             throw new UndefinedModelException(modelClass);
         }
 
-        try {
-            return (TResult) singletonFactories.get(modelClass).create();
-        } catch (MissingModelConstructor missingModelConstructor) {
-            missingModelConstructor.printStackTrace();
-        }
+        return registrations.get(modelClass);
+    }
 
-        return null;
+    public <TResult extends Model> Query<TResult> get(Class<TResult> modelClass) throws UndefinedModelException {
+        return (Query<TResult>) getRegistration(modelClass).getFactory().all();
     }
 }

@@ -1,4 +1,4 @@
 name: GameMakerAPI
-main: com.orangecheese.GameMakerAPI.Plugin
+main: com.orangecheese.GameMakerAPI.Main
 version: 0.1
 api-version: 1.16

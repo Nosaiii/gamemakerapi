@@ -4,6 +4,7 @@ import com.orangecheese.GameMakerAPI.orm.connection.DatabaseConnection;
 import com.orangecheese.GameMakerAPI.orm.model.IModelMapper;
 import com.orangecheese.GameMakerAPI.orm.model.Model;
 import com.orangecheese.GameMakerAPI.orm.model.ModelProperty;
+import com.orangecheese.GameMakerAPI.orm.modelfacade.ModelService;
 import com.orangecheese.helpers.ICloneable;
 
 import java.sql.ResultSet;
@@ -14,12 +15,12 @@ import java.util.function.Predicate;
 public class Query<T extends Model> implements ICloneable<Query<T>> {
     private List<T> collection;
 
-    public Query(IModelMapper modelMapper, DatabaseConnection connection, String tableName, ResultSet resultSet) {
+    public Query(IModelMapper modelMapper, ModelService modelService, ResultSet resultSet) {
         collection = new ArrayList<>();
 
         try {
             while (resultSet.next()) {
-                Model model = modelMapper.Map(connection, tableName, resultSet);
+                Model model = modelMapper.Map(modelService, resultSet);
                 collection.add((T) model);
             }
         } catch (SQLException e) {

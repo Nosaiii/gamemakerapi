@@ -1,6 +1,8 @@
 package com.orangecheese.GameMakerAPI.orm.model;
 
 import com.orangecheese.GameMakerAPI.orm.connection.DatabaseConnection;
+import com.orangecheese.GameMakerAPI.orm.exceptions.UndefinedModelException;
+import com.orangecheese.GameMakerAPI.orm.modelfacade.ModelService;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -8,15 +10,13 @@ import java.sql.SQLException;
 import java.util.*;
 
 public abstract class Model {
-    private final DatabaseConnection connection;
-    private final String tableName;
+    private final ModelService modelService;
     private boolean isNew;
 
     protected Map<String, ModelProperty> properties;
 
-    public Model(DatabaseConnection connection, String tableName, ResultSet resultSet) throws SQLException {
-        this.connection = connection;
-        this.tableName = tableName;
+    public Model(ModelService modelService, ResultSet resultSet) throws SQLException {
+        this.modelService = modelService;
         isNew = false;
 
         properties = new HashMap<>();
@@ -29,9 +29,8 @@ public abstract class Model {
         }
     }
 
-    public Model(DatabaseConnection connection, String tableName) {
-        this.connection = connection;
-        this.tableName = tableName;
+    public Model(ModelService modelService) {
+        this.modelService = modelService;
         isNew = true;
 
         properties = new HashMap<>();
@@ -47,8 +46,10 @@ public abstract class Model {
         return property;
     }
 
-    public void save() {
+    public void save() throws UndefinedModelException {
         StringBuilder queryBuilder = new StringBuilder();
+
+        String tableName = modelService.getRegistration(getClass()).getTableName();
 
         if (isNew) {
             List<String> columns = new ArrayList<>();
@@ -96,15 +97,17 @@ public abstract class Model {
         }
 
         String query = queryBuilder.toString();
-        connection.executeUpdateQuery(query);
+        modelService.getConnection().executeUpdateQuery(query);
 
         isNew = false;
     }
 
-    public void delete() {
+    public void delete() throws UndefinedModelException {
+        String tableName = modelService.getRegistration(getClass()).getTableName();
+
         String query = "DELETE FROM " + tableName + " " +
                 getModelSpecificWhereClause();
-        connection.executeUpdateQuery(query);
+        modelService.getConnection().executeUpdateQuery(query);
     }
 
     private Map<String, String> getPrimaryKeyValuePairs() {

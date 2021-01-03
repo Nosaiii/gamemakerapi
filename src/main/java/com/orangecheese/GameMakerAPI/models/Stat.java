@@ -1,18 +1,18 @@
 package com.orangecheese.GameMakerAPI.models;
 
-import com.orangecheese.GameMakerAPI.orm.connection.DatabaseConnection;
 import com.orangecheese.GameMakerAPI.orm.model.Model;
+import com.orangecheese.GameMakerAPI.orm.modelfacade.ModelService;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class StatModel extends Model {
-    public StatModel(DatabaseConnection connection, String tableName, ResultSet resultSet) throws SQLException {
-        super(connection, tableName, resultSet);
+public class Stat extends Model {
+    public Stat(ModelService modelService, ResultSet resultSet) throws SQLException {
+        super(modelService, resultSet);
     }
 
-    public StatModel(DatabaseConnection connection, String tableName, String uuid) {
-        super(connection, tableName);
+    public Stat(ModelService modelService, String uuid) {
+        super(modelService);
 
         createProperty("uuid", uuid);
         createProperty("kills", 0);
