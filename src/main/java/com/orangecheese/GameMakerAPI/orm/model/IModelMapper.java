@@ -6,5 +6,5 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public interface IModelMapper {
-    Model Map(DatabaseConnection connection, ResultSet resultSet) throws SQLException;
+    Model Map(DatabaseConnection connection, String tableName, ResultSet resultSet) throws SQLException;
 }

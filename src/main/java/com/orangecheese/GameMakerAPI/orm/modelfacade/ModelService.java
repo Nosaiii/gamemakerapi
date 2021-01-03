@@ -58,7 +58,8 @@ public class ModelService {
                 Objects.requireNonNull(result);
 
                 IModelMapper mapper = modelMappers.get(properties.getModelClass());
-                return new Query<T>(mapper, connection, result);
+                String tableName = properties.getTableName();
+                return new Query<T>(mapper, connection, tableName, result);
             }
 
             @Override

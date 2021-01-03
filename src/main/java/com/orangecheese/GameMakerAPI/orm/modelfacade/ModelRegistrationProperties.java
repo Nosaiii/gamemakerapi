@@ -11,7 +11,13 @@ public class ModelRegistrationProperties {
     public ModelRegistrationProperties(Class<? extends Model> modelClass, IModelMapper modelMapper) {
         this.modelClass = modelClass;
         this.modelMapper = modelMapper;
+
         tableName = modelClass.getSimpleName().replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase();
+    }
+
+    public ModelRegistrationProperties(Class<? extends Model> modelClass, String tableName, IModelMapper modelMapper) {
+        this(modelClass, modelMapper);
+        this.tableName = tableName;
     }
 
     public Class<? extends Model> getModelClass() {

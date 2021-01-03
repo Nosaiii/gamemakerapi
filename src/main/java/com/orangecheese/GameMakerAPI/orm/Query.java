@@ -14,13 +14,12 @@ import java.util.function.Predicate;
 public class Query<T extends Model> implements ICloneable<Query<T>> {
     private List<T> collection;
 
-    public Query(IModelMapper modelMapper, DatabaseConnection connection, ResultSet resultSet) {
-
+    public Query(IModelMapper modelMapper, DatabaseConnection connection, String tableName, ResultSet resultSet) {
         collection = new ArrayList<>();
 
         try {
             while (resultSet.next()) {
-                Model model = modelMapper.Map(connection, resultSet);
+                Model model = modelMapper.Map(connection, tableName, resultSet);
                 collection.add((T) model);
             }
         } catch (SQLException e) {

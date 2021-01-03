@@ -9,17 +9,19 @@ import java.util.*;
 
 public abstract class Model {
     private final DatabaseConnection connection;
+    private final String tableName;
     private boolean isNew;
 
     protected Map<String, ModelProperty> properties;
 
-    public Model(DatabaseConnection connection, ResultSet resultSet) throws SQLException {
+    public Model(DatabaseConnection connection, String tableName, ResultSet resultSet) throws SQLException {
         this.connection = connection;
+        this.tableName = tableName;
         isNew = false;
 
-        ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-
         properties = new HashMap<>();
+
+        ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
 
         for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
             String columnName = resultSetMetaData.getColumnName(i);
@@ -27,9 +29,11 @@ public abstract class Model {
         }
     }
 
-    public Model(DatabaseConnection connection) {
+    public Model(DatabaseConnection connection, String tableName) {
         this.connection = connection;
+        this.tableName = tableName;
         isNew = true;
+
         properties = new HashMap<>();
     }
 
@@ -54,7 +58,7 @@ public abstract class Model {
                 values.add(property.get());
             }
 
-            queryBuilder.append("INSERT INTO ").append(getTableName()).append(" ");
+            queryBuilder.append("INSERT INTO ").append(tableName).append(" ");
             queryBuilder.append("(").append(String.join(", ", columns)).append(" ").append(")");
             queryBuilder.append("VALUES ");
             queryBuilder.append("(");
@@ -71,7 +75,7 @@ public abstract class Model {
 
             queryBuilder.append(")");
         } else {
-            queryBuilder.append("UPDATE ").append(getTableName()).append(" SET ");
+            queryBuilder.append("UPDATE ").append(tableName).append(" SET ");
 
             Iterator<ModelProperty> modelPropertyIterator = properties.values().iterator();
             while (modelPropertyIterator.hasNext()) {
@@ -98,7 +102,7 @@ public abstract class Model {
     }
 
     public void delete() {
-        String query = "DELETE FROM " + getTableName() + " " +
+        String query = "DELETE FROM " + tableName + " " +
                 getModelSpecificWhereClause();
         connection.executeUpdateQuery(query);
     }
@@ -135,8 +139,6 @@ public abstract class Model {
 
         return stringBuilder.toString();
     }
-
-    public abstract String getTableName();
 
     public abstract String[] getPrimaryKeyColumns();
 }
