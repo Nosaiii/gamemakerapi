@@ -6,12 +6,12 @@ import com.orangecheese.GameMakerAPI.orm.modelfacade.ModelService;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class Stat extends Model {
-    public Stat(ModelService modelService, ResultSet resultSet) throws SQLException {
+public class StatData extends Model {
+    public StatData(ModelService modelService, ResultSet resultSet) throws SQLException {
         super(modelService, resultSet);
     }
 
-    public Stat(ModelService modelService, String uuid) {
+    public StatData(ModelService modelService, String uuid) {
         super(modelService);
 
         createProperty("uuid", uuid);
