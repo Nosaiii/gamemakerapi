@@ -17,6 +17,7 @@ public abstract class GameMakerApiPlugin extends JavaPlugin {
     public ModelService registerModelService(DatabaseConnectionProperties connectionProperties) {
         ModelService modelService = new ModelService(connectionProperties);
 
+        // Single
         modelService.register(new ModelRegistrationProperties(Game.class, new GameMapper()));
         modelService.register(new ModelRegistrationProperties(Team.class, new TeamMapper()));
         modelService.register(new ModelRegistrationProperties(SpawnPoint.class, new SpawnPointMapper()));

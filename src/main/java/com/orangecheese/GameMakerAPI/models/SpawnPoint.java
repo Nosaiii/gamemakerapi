@@ -14,15 +14,17 @@ public class SpawnPoint extends Model {
     public SpawnPoint(ModelService modelService, Team team, String worldName, double x, double y, double z, float yaw, float pitch) {
         super(modelService);
 
-        Object teamId = team == null ? null : team.getProperty("id").<Long>get();
-
-        createProperty("team_id", teamId);
+        createProperty("team_id", team.getProperty("id").<Long>get());
         createProperty("world", worldName);
         createProperty("x", x);
         createProperty("y", y);
         createProperty("z", z);
         createProperty("yaw", yaw);
         createProperty("pitch", pitch);
+    }
+
+    public Team getTeam() {
+        return hasOne(Team.class);
     }
 
     @Override

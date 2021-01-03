@@ -3,6 +3,8 @@ package com.orangecheese.GameMakerAPI.orm.connection;
 import com.orangecheese.GameMakerAPI.orm.exceptions.EmptyQueryResultException;
 
 import java.sql.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DatabaseConnection {
     private Connection connection;
@@ -28,21 +30,37 @@ public class DatabaseConnection {
             e.printStackTrace();
         }
 
-        if(result == null) {
+        if (result == null) {
             throw new EmptyQueryResultException(query);
         }
 
         return result;
     }
 
-    public int executeUpdateQuery(String query) {
+    public Object[] executeUpdateQuery(String query) {
         try {
-            PreparedStatement statement = connection.prepareStatement(query);
-            return statement.executeUpdate();
+            PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            statement.executeUpdate();
+
+            ResultSet generatedKeys = statement.getGeneratedKeys();
+            ResultSetMetaData resultSetMetaData = generatedKeys.getMetaData();
+
+            if (generatedKeys.next()) {
+                int columnAmount = resultSetMetaData.getColumnCount();
+                Object[] keyValues = new Object[columnAmount];
+
+                for (int i = 1; i <= columnAmount; i++) {
+                    keyValues[i - 1] = generatedKeys.getObject(i);
+                }
+
+                return keyValues;
+            } else {
+                throw new SQLException("An error occured trying to insert data to the database");
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        return 0;
+        return new Object[]{};
     }
 }

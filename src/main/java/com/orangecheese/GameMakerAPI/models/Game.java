@@ -8,14 +8,22 @@ import com.orangecheese.GameMakerAPI.orm.modelfacade.ModelService;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Game extends Model {
+    private List<Team> teams;
+
     public Game(ModelService modelService, ResultSet resultSet) throws SQLException {
         super(modelService, resultSet);
+
+        teams = new ArrayList<>();
     }
 
     public Game(ModelService modelService, boolean serverInstance) {
         super(modelService);
+
+        teams = new ArrayList<>();
 
         createProperty("name", "Game");
         createProperty("min_players", 2);
@@ -33,6 +41,21 @@ public class Game extends Model {
         createProperty("lobby_x", 0);
         createProperty("lobby_y", 0);
         createProperty("lobby_z", 0);
+        createProperty("lobby_yaw", 0);
+        createProperty("lobby_pitch", 0);
+    }
+
+    public Team addTeam(String teamName) {
+        Team team = new Team(modelService, teamName, this);
+        try {
+            team.save();
+        } catch (UndefinedModelException e) {
+            e.printStackTrace();
+        }
+
+        teams.add(team);
+
+        return team;
     }
 
     public Query<SpawnPoint> getSpawnPoints() {
@@ -44,6 +67,10 @@ public class Game extends Model {
         }
 
         return null;
+    }
+
+    public Query<Team> getTeams() {
+        return hasMany(Team.class);
     }
 
     @Override

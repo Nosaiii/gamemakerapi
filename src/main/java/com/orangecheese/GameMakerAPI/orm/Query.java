@@ -1,11 +1,12 @@
 package com.orangecheese.GameMakerAPI.orm;
 
-import com.orangecheese.GameMakerAPI.orm.connection.DatabaseConnection;
+import com.orangecheese.GameMakerAPI.orm.exceptions.ModelNotSyncedWithDatabaseException;
 import com.orangecheese.GameMakerAPI.orm.model.IModelMapper;
 import com.orangecheese.GameMakerAPI.orm.model.Model;
 import com.orangecheese.GameMakerAPI.orm.model.ModelProperty;
 import com.orangecheese.GameMakerAPI.orm.modelfacade.ModelService;
 import com.orangecheese.helpers.ICloneable;
+import org.bukkit.Bukkit;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,6 +27,10 @@ public class Query<T extends Model> implements ICloneable<Query<T>> {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public Query(List<T> fromList) {
+        collection = fromList;
     }
 
     private Query(Query<T> base) {
@@ -191,6 +196,16 @@ public class Query<T extends Model> implements ICloneable<Query<T>> {
         }
 
         return lowest;
+    }
+
+    public <S> List<S> select(String propertyName) {
+        List<S> list = new ArrayList<>();
+
+        for(T m : collection) {
+            list.add(m.getProperty(propertyName).get());
+        }
+
+        return list;
     }
 
     public double sum(String propertyName) {

@@ -1,5 +1,6 @@
 package com.orangecheese.GameMakerAPI.models;
 
+import com.orangecheese.GameMakerAPI.orm.exceptions.ModelNotSyncedWithDatabaseException;
 import com.orangecheese.GameMakerAPI.orm.model.Model;
 import com.orangecheese.GameMakerAPI.orm.modelfacade.ModelService;
 
@@ -11,10 +12,19 @@ public class Team extends Model {
         super(modelService, resultSet);
     }
 
-    public Team(ModelService modelService, String teamName) {
+    public Team(ModelService modelService, String teamName, Game game) {
         super(modelService);
 
         createProperty("name", teamName);
+        createProperty("game_id", game.getProperty("id").<Long>get());
+    }
+
+    public Game getGame() {
+        return hasOne(Game.class);
+    }
+
+    public SpawnPoint getSpawnPoint() {
+        return hasOne(SpawnPoint.class);
     }
 
     @Override

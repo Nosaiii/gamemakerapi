@@ -1,8 +1,11 @@
 package com.orangecheese.GameMakerAPI.orm.model;
 
-import com.orangecheese.GameMakerAPI.orm.connection.DatabaseConnection;
+import com.orangecheese.GameMakerAPI.orm.Query;
+import com.orangecheese.GameMakerAPI.orm.exceptions.ModelNotSyncedWithDatabaseException;
 import com.orangecheese.GameMakerAPI.orm.exceptions.UndefinedModelException;
 import com.orangecheese.GameMakerAPI.orm.modelfacade.ModelService;
+import com.orangecheese.helpers.Tuple;
+import org.bukkit.Bukkit;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -37,13 +40,20 @@ public abstract class Model {
     }
 
     public ModelProperty getProperty(String propertyName) {
+        try {
+            if(Arrays.asList(getPrimaryKeyColumns()).contains(propertyName) && !properties.containsKey(propertyName)) {
+                throw new ModelNotSyncedWithDatabaseException(getClass());
+            }
+        } catch(ModelNotSyncedWithDatabaseException e) {
+            e.printStackTrace();
+        }
+
         return properties.get(propertyName);
     }
 
-    public ModelProperty createProperty(String propertyName, Object propertyValue) {
+    public void createProperty(String propertyName, Object propertyValue) {
         ModelProperty property = new ModelProperty(propertyName, propertyValue);
         properties.put(propertyName, property);
-        return property;
     }
 
     public void save() throws UndefinedModelException {
@@ -69,7 +79,7 @@ public abstract class Model {
                 Object value = valueIterator.next();
                 queryBuilder.append("'").append(value).append("'");
 
-                if(valueIterator.hasNext()) {
+                if (valueIterator.hasNext()) {
                     queryBuilder.append(", ");
                 }
             }
@@ -97,7 +107,11 @@ public abstract class Model {
         }
 
         String query = queryBuilder.toString();
-        modelService.getConnection().executeUpdateQuery(query);
+        Object[] generatedKeyValues = modelService.getConnection().executeUpdateQuery(query);
+
+        for(int i = 0; i < generatedKeyValues.length; i++) {
+            createProperty(getPrimaryKeyColumns()[i], generatedKeyValues[i]);
+        }
 
         isNew = false;
     }
@@ -112,11 +126,10 @@ public abstract class Model {
 
     private Map<String, String> getPrimaryKeyValuePairs() {
         Map<String, String> primaryKeyValues = new HashMap<>();
-        for (String primaryKeyColumn : getPrimaryKeyColumns()) {
-            String primaryKeyValue = null;
-            ModelProperty primaryKeyProperty = getProperty(primaryKeyColumn);
-            primaryKeyValue = primaryKeyProperty.get();
 
+        for (String primaryKeyColumn : getPrimaryKeyColumns()) {
+            ModelProperty primaryKeyProperty = getProperty(primaryKeyColumn);
+            String primaryKeyValue = primaryKeyProperty.get();
             primaryKeyValues.put(primaryKeyColumn, primaryKeyValue);
         }
 
@@ -141,6 +154,65 @@ public abstract class Model {
         }
 
         return stringBuilder.toString();
+    }
+
+    public <T extends Model> T hasOne(Class<T> modelClass) {
+        String standardForeignKeyColumn = getClass().getSimpleName().replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase() + "_id";
+        return hasOne(modelClass, standardForeignKeyColumn);
+    }
+
+    public <T extends Model> T hasOne(Class<T> modelClass, String... foreignKeyColumns) {
+        return hasMany(modelClass, foreignKeyColumns).first();
+    }
+
+    public <T extends Model> Query<T> hasMany(Class<T> modelClass, Class<? extends PivotModel<? extends Model, ? extends Model>> pivotClass) {
+        List<T> list = new ArrayList<>();
+
+        try {
+            Query<? extends PivotModel<? extends Model, ? extends Model>> pivotModelQuery = modelService.get(pivotClass);
+            for (PivotModel<? extends Model, ? extends Model> pivotModel : pivotModelQuery.toArray()) {
+                list.add(pivotModel.get(modelClass));
+            }
+
+            if(list.isEmpty()) {
+                return new Query<>(new ArrayList<>());
+            }
+
+            return filterCollection(new Query<>(list), list.get(0).getPrimaryKeyColumns(), getPrimaryKeyColumns());
+        } catch (UndefinedModelException e) {
+            e.printStackTrace();
+        }
+
+        return new Query<>(list);
+    }
+
+    public <T extends Model> Query<T> hasMany(Class<T> modelClass) {
+        String standardForeignKeyColumn = getClass().getSimpleName().replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase() + "_id";
+        return hasMany(modelClass, standardForeignKeyColumn);
+    }
+
+    public <T extends Model> Query<T> hasMany(Class<T> modelClass, String... foreignKeyColumns) {
+        try {
+            return filterCollection(modelService.get(modelClass), foreignKeyColumns, getPrimaryKeyColumns());
+        } catch (UndefinedModelException e) {
+            e.printStackTrace();
+        }
+
+        return new Query<>(new ArrayList<>());
+    }
+
+    private <T extends Model> Query<T> filterCollection(Query<T> query, String[] targetColumns, String[] originColumns) {
+        List<Tuple<String, String>> columns = new ArrayList<>();
+
+        for (int i = 0; i < originColumns.length; i++) {
+            columns.add(new Tuple<>(targetColumns[i], originColumns[i]));
+        }
+
+        for (Tuple<String, String> column : columns) {
+            query = query.where(m -> m.getProperty(column.getItem1()).get().equals(getProperty(column.getItem2()).get()));
+        }
+
+        return query;
     }
 
     public abstract String[] getPrimaryKeyColumns();
