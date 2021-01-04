@@ -5,7 +5,6 @@ import com.orangecheese.GameMakerAPI.orm.exceptions.ModelNotSyncedWithDatabaseEx
 import com.orangecheese.GameMakerAPI.orm.exceptions.UndefinedModelException;
 import com.orangecheese.GameMakerAPI.orm.modelfacade.ModelService;
 import com.orangecheese.helpers.Tuple;
-import org.bukkit.Bukkit;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;

@@ -7,11 +7,10 @@ import com.orangecheese.GameMakerAPI.orm.exceptions.EmptyQueryResultException;
 import com.orangecheese.GameMakerAPI.orm.exceptions.UndefinedModelException;
 import com.orangecheese.GameMakerAPI.orm.model.IModelMapper;
 import com.orangecheese.GameMakerAPI.orm.model.Model;
+import com.orangecheese.helpers.Tuple;
 
 import java.sql.ResultSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class ModelService {
     private final DatabaseConnection connection;
@@ -76,5 +75,23 @@ public class ModelService {
 
     public <TResult extends Model> Query<TResult> get(Class<TResult> modelClass) throws UndefinedModelException {
         return (Query<TResult>) getRegistration(modelClass).getFactory().all();
+    }
+
+    public <TResult extends Model> TResult getByPrimaryKey(Class<TResult> modelClass, Object... primaryKeyValues) throws UndefinedModelException {
+        Query<TResult> query = (Query<TResult>) getRegistration(modelClass).getFactory().all();
+
+        if(query.count() == 0) {
+            return null;
+        }
+
+        String[] primaryKeyColumns = query.first().getPrimaryKeyColumns();
+
+        for(int i = 0; i < primaryKeyColumns.length; i++) {
+            String primaryKeyColumn = primaryKeyColumns[i];
+            Object primaryKeyValue = primaryKeyValues[i];
+            query = query.where(m -> m.getProperty(primaryKeyColumn).get().equals(primaryKeyValue));
+        }
+
+        return query.first();
     }
 }

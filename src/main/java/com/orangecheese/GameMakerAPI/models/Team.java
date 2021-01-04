@@ -1,8 +1,10 @@
 package com.orangecheese.GameMakerAPI.models;
 
-import com.orangecheese.GameMakerAPI.orm.exceptions.ModelNotSyncedWithDatabaseException;
+import com.orangecheese.GameMakerAPI.orm.Query;
+import com.orangecheese.GameMakerAPI.orm.exceptions.UndefinedModelException;
 import com.orangecheese.GameMakerAPI.orm.model.Model;
 import com.orangecheese.GameMakerAPI.orm.modelfacade.ModelService;
+import org.bukkit.entity.Player;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -19,6 +21,20 @@ public class Team extends Model {
         createProperty("game_id", game.getProperty("id").<Long>get());
     }
 
+    public void addPlayer(Player player) {
+        try {
+            PlayerInfo existendPlayerInfo = modelService.getByPrimaryKey(PlayerInfo.class, player.getUniqueId().toString());
+            if (existendPlayerInfo != null) {
+                existendPlayerInfo.delete();
+            }
+
+            PlayerInfo playerInfo = new PlayerInfo(modelService, player, this);
+            playerInfo.save();
+        } catch (UndefinedModelException e) {
+            e.printStackTrace();
+        }
+    }
+
     public Game getGame() {
         return hasOne(Game.class);
     }
@@ -27,9 +43,13 @@ public class Team extends Model {
         return hasOne(SpawnPoint.class);
     }
 
+    public Query<PlayerInfo> getPlayers() {
+        return hasMany(PlayerInfo.class);
+    }
+
     @Override
     public String[] getPrimaryKeyColumns() {
-        return new String[] {
+        return new String[]{
                 "id"
         };
     }
